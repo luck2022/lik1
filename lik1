@@ -1,0 +1,72 @@
+> personal.newAccount("123") // Создаем новый аккаунт с паролем "123"
+"0x07ae7ebb7b9c65b51519fc6561b8a78ad921ed13" // Его адрес
+> eth.accounts // Смотрим список аккаунтов
+["0x07ae7ebb7b9c65b51519fc6561b8a78ad921ed13"]
+> miner.setEtherbase(eth.accounts[0]) // Устанавливаем его в качестве аккаунта для майнинга
+true
+> eth.coinbase // Проверяем
+"0x07ae7ebb7b9c65b51519fc6561b8a78ad921ed13" // Все верно
+> miner.start() // Я запускаю майнер не в первый раз, поэтому у меня номера блоков 31,32,...
+true
+I1005 09:25:44.363901 miner/miner.go:136] Starting mining operation (CPU=2 TOT=3)
+I1005 09:25:44.364247 miner/worker.go:539] commit new work on block 31 with 0 txs & 0 uncles. Took 291.8µs
+I1005 09:25:45.049267 miner/worker.go:342] Mined block (#31 / 4ca861c2). Wait 5 blocks for confirmation
+I1005 09:25:45.049567 miner/worker.go:539] commit new work on block 32 with 0 txs & 0 uncles. Took 133.101µs
+I1005 09:25:45.049976 miner/worker.go:539] commit new work on block 32 with 0 txs & 0 uncles. Took 121.3µs
+I1005 09:25:45.632474 miner/worker.go:342] Mined block (#32 / f79f0df7). Wait 5 blocks for confirmation
+I1005 09:25:45.632796 miner/worker.go:539] commit new work on block 33 with 0 txs & 0 uncles. Took 182.601µs
+I1005 09:25:45.632915 miner/worker.go:539] commit new work on block 33 with 0 txs & 0 uncles. Took 86.9µs
+I1005 09:25:46.441888 miner/worker.go:342] Mined block (#33 / 16e99579). Wait 5 blocks for confirmation
+I1005 09:25:46.442257 miner/worker.go:539] commit new work on block 34 with 0 txs & 0 uncles. Took 268.9µs
+I1005 09:25:46.442440 miner/worker.go:539] commit new work on block 34 with 0 txs & 0 uncles. Took 120.201µs
+> miner.stop()
+true
+> eth.getBalance(eth.coinbase) // Проверим баланс
+15000000000000000000
+
+function checkAllBalances() {
+    var totalBal = 0;
+    for (var acctNum in eth.accounts) {
+        var acct = eth.accounts[acctNum];
+        var acctBal = web3.fromWei(eth.getBalance(acct), "ether");
+        totalBal += parseFloat(acctBal);
+        console.log("  eth.accounts[" + acctNum + "]: \t" + acct + " \tbalance: " + acctBal + " ether");
+    }
+    console.log("  Total balance: " + totalBal + " ether");
+};
+
+geth --dev --rpc --rpcaddr "0.0.0.0" --rpcapi "admin,debug,miner,shh,txpool,personal,eth,net,web3" console
+mist.exe --rpc http://localhost:8545
+
+
+contract mortal {
+    /*Для адресов есть отдельный тип переменных*/
+    address owner;
+
+    /*Данная функция исполняется лишь однажды - при загрузки контракта в блокчейн
+    Называется также как и контракт
+    Переменной owner присвоится значение адреса отправителя контракта, то есть ваш адрес*/
+    function mortal() { owner = msg.sender; }
+
+    /*Функция selfdestruct уничтожает контракт и отправляет все средства со счета контракта на адрес, указанный в аргументе*/
+    /*В Ethereum любой участник сети может вызвать любую функцию
+    Проверка адреса позволит уничтожить контракт только вам*/
+    function kill() { if (msg.sender == owner) selfdestruct(owner); }
+}
+
+/*Оператор is отвечает за наследование*/
+/*Возможно множественное наследование вида contract_1 is contract_2, contract_3*/
+contract greeter is mortal {
+    string greeting;
+
+    /*В этом случае при инициализации контракта нужно будет указать строку-аргумент
+    В нашем случае это и будет "Hello, world!"*/
+    function greeter(string _greeting) public {
+        greeting = _greeting;
+    }
+
+    // Эта функция и отвечает за возвращение "Hello, world!"
+    function greet() constant returns (string) {
+        return greeting;
+    }
+}
